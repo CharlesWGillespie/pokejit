@@ -238,9 +238,17 @@ export default {
     const url = new URL(request.url);
     const secret = (env as Env & { ADMIN_PASSWORD: string }).ADMIN_PASSWORD;
 
-    if (!secret) {
-      return new Response("ADMIN_PASSWORD secret is missing.", { status: 500 });
-    }
+if (url.pathname === "/api/health") {
+  return Response.json({
+    app: "PokeDrop Sniper",
+    status: "online",
+    adminPasswordConfigured: Boolean(secret)
+  });
+}
+
+if (!secret) {
+  return new Response("ADMIN_PASSWORD secret is missing.", { status: 500 });
+}
 
     if (url.pathname === "/api/health") {
       try {
