@@ -13,8 +13,10 @@ function money(cents: number | null): string {
 }
 
 function parseMoney(value: string): number | null {
-  if (!/^\d+(\.\d{1,2})?$/.test(value.trim())) return null;
-  const amount = Number(value);
+  // Accept common entries such as 26.94, $26.94, and 1,299.99.
+  const cleaned = value.trim().replace(/[$,\s]/g, "");
+  if (!/^\d+(\.\d{1,2})?$/.test(cleaned)) return null;
+  const amount = Number(cleaned);
   if (!Number.isFinite(amount) || amount < 0 || amount > 100000) return null;
   return Math.round(amount * 100);
 }
@@ -177,15 +179,24 @@ export default {
         };
         const domain = domains[retailer];
 
-        if (!productName || productName.length > 150 ||
-            !allowedRetailers.includes(retailer) ||
-            msrp === null ||
-            (currentRaw !== "" && currentPrice === null) ||
-            !allowedStock.includes(stock) ||
-            parsedUrl.protocol !== "https:" ||
-            !domain ||
+        if (!productName || productName.length > 150) {
+          return new Response("Please enter a product name (150 characters or fewer).", { status: 400 });
+        }
+        if (!allowedRetailers.includes(retailer)) {
+          return new Response("Please choose one of the listed retailers.", { status: 400 });
+        }
+        if (msrp === null) {
+          return new Response("Please enter a valid MSRP, such as 26.94 or $26.94.", { status: 400 });
+        }
+        if (currentRaw !== "" && currentPrice === null) {
+          return new Response("Please enter a valid current price, such as 26.94 or $26.94, or leave it blank.", { status: 400 });
+        }
+        if (!allowedStock.includes(stock)) {
+          return new Response("Please choose a valid stock status.", { status: 400 });
+        }
+        if (parsedUrl.protocol !== "https:" || !domain ||
             !(parsedUrl.hostname === domain || parsedUrl.hostname.endsWith("." + domain))) {
-          return new Response("Check the product name, prices, retailer, stock status and official HTTPS product URL.", { status: 400 });
+          return new Response("Please use an official HTTPS product URL for the retailer you selected.", { status: 400 });
         }
 
         try {
